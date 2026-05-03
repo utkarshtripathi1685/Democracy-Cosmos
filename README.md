@@ -23,6 +23,8 @@ Antigravity Election Universe is an interactive, immersive web-based simulation 
 *   **Audio Engine:** Dynamic background hums that change with gravity, interactive chimes, and bass drops for a multi-sensory experience.
 *   **Judge Mode (Debug):** Press `J` to toggle a performance overlay displaying FPS, particle count, audio nodes, and engine state.
 *   **Cloud Run Integration:** Designed to report learning scores to a Google Cloud Run backend for tracking and analytics.
+    *   `/api`
+    *   Backend endpoint: `/saveScore` (Cloud Run)
 
 ## Technology Stack
 
