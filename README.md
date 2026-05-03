@@ -22,9 +22,10 @@ Antigravity Election Universe is an interactive, immersive web-based simulation 
     *   **Crisis Simulation:** Test your decision-making skills in high-pressure election scenarios like fake news outbreaks and Model Code of Conduct violations.
 *   **Audio Engine:** Dynamic background hums that change with gravity, interactive chimes, and bass drops for a multi-sensory experience.
 *   **Judge Mode (Debug):** Press `J` to toggle a performance overlay displaying FPS, particle count, audio nodes, and engine state.
-*   **Cloud Run Integration:** Designed to report learning scores to a Google Cloud Run backend for tracking and analytics.
-    *   `/api`
-    *   Backend endpoint: `/saveScore` (Cloud Run)
+*   **Cloud Run Integration:** Reports learning scores to a configurable Google Cloud Run endpoint for analytics and progress tracking.
+*   **Security Hardening:** Adds a strict Content Security Policy, bounded score validation, and safe JSON submission helpers.
+*   **Keyboard + Accessibility:** Supports keyboard shortcuts (`J`, `V`, `S`, `C`), skip link navigation, and improved labeling for controls.
+*   **Automated Tests:** Includes a Node test suite for scoring/progress/reporting utilities.
 
 ## Technology Stack
 
@@ -50,6 +51,26 @@ Antigravity Election Universe is an interactive, immersive web-based simulation 
     npx serve
     ```
 
+### Configure score reporting (Google Cloud Run)
+
+Add this snippet right before the main script tag in `index.html` and set your Cloud Run endpoint:
+
+```html
+<script>
+  window.__PROMPTWAR_CONFIG__ = {
+    scoreEndpoint: "https://YOUR-CLOUD-RUN-URL/saveScore"
+  };
+</script>
+```
+
+If the endpoint is not set, score reporting is safely skipped without breaking the simulation.
+
+### Run tests
+
+```bash
+npm test
+```
+
 ### Controls
 
 *   **Mouse Move:** Navigate the cosmos. Observe parallax effects and generate confetti trails.
@@ -57,6 +78,9 @@ Antigravity Election Universe is an interactive, immersive web-based simulation 
 *   **Drag & Drop:** Click and hold candidate cards to throw them around the cosmos with physics.
 *   **Gravity Slider:** Adjust the gravitational pull. Moving it to maximum triggers the Election Day Simulation.
 *   **'J' Key:** Toggle the developer/judge performance overlay.
+*   **'V' Key:** Trigger Cast a Vote.
+*   **'S' Key:** Trigger Election Day Simulation mode.
+*   **'C' Key:** Trigger Crisis Simulation mode.
 
 ## Project Structure
 
@@ -68,8 +92,10 @@ Antigravity Election Universe is an interactive, immersive web-based simulation 
 *   **Comet Trails:** Orbiting election orbs now feature dynamic comet trails.
 *   **Repulsion Physics:** The mouse cursor acts as a gravitational repulsor, pushing orbs away naturally.
 *   **Solar Flare Effects:** A dramatic visual sequence with shockwaves, sun pulses, and particle bursts when initiating simulations.
-*   **Accessibility (ARIA):** Enhanced screen reader support for the learning engine overlay.
+*   **Accessibility (ARIA):** Enhanced screen reader support for the learning engine overlay and control toolbar semantics.
 *   **Code Assertions:** Added robust checks to ensure state machine integrity.
+*   **Security + Reliability:** Introduced endpoint validation, score clamping, and safe network posting utility wrappers.
+*   **Test Coverage:** Added automated tests for utility logic in score, progress, and network report helpers.
 
 ## License
 

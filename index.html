@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'self' https:; object-src 'none'; base-uri 'none'; form-action 'none'">
     <title>Antigravity Election Universe</title>
     <style>
         :root {
@@ -291,9 +292,25 @@
             z-index: 10;
         }
 
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 8px 12px;
+            border: 1px solid #10b981;
+            z-index: 200;
+        }
+        .skip-link:focus {
+            left: 10px;
+            top: 10px;
+        }
+
     </style>
 </head>
 <body>
+    <a href="#ui" class="skip-link">Skip to controls</a>
 
     <div class="nebula nebula-1"></div>
     <div class="nebula nebula-2"></div>
@@ -308,7 +325,7 @@
         <div>State: <span id="j-state">IDLE</span></div>
     </div>
 
-    <canvas id="universe"></canvas>
+    <canvas id="universe" aria-label="Interactive election universe simulation"></canvas>
 
     <div id="dom-layer"></div>
 
@@ -328,16 +345,22 @@
 
     <div id="aria-live" aria-live="polite" style="position:absolute; left:-9999px;"></div>
 
-    <div id="ui">
+    <div id="ui" role="toolbar" aria-label="Simulation controls">
         <button id="btn-vote" aria-label="Cast a Vote">Cast a Vote</button>
         <div class="slider-container">
-            <label>Gravity Pull</label>
+            <label for="gravity-slider">Gravity Pull</label>
             <input type="range" id="gravity-slider" min="0" max="1" step="0.01" value="0" aria-label="Adjust Timeline">
         </div>
         <button id="btn-flare" aria-label="Start Election Day Simulation">⚠ Election Day Simulation Mode</button>
         <button id="btn-summon" aria-label="Start Election Crisis Simulation">⚠ Run Election Crisis Simulation</button>
     </div>
 
+    <script>
+        window.__PROMPTWAR_CONFIG__ = window.__PROMPTWAR_CONFIG__ || {
+            scoreEndpoint: ""
+        };
+    </script>
+    <script src="./engine-utils.js"></script>
     <script>
         // ========================
         // SECTION: CORE SETUP & STATE
@@ -370,6 +393,15 @@
             if (e.key.toLowerCase() === 'j') {
                 judgeModeActive = !judgeModeActive;
                 document.getElementById('judge-overlay').style.display = judgeModeActive ? 'block' : 'none';
+            }
+            if (e.key.toLowerCase() === 'v') {
+                document.getElementById('btn-vote').click();
+            }
+            if (e.key.toLowerCase() === 's') {
+                document.getElementById('btn-flare').click();
+            }
+            if (e.key.toLowerCase() === 'c') {
+                document.getElementById('btn-summon').click();
             }
         });
 
@@ -611,14 +643,20 @@
         const userAnswers = {};
         let crisisQueue = [];
 
-        function reportScore(score) {
+        async function reportScore(score) {
+            const normalizedScore = EngineUtils.clampScore(score);
+            const endpoint = EngineUtils.getScoreEndpoint();
             // TEST: Score bounds check
-            console.assert(score >= 0 && score <= 100, "Invalid score range");
-            fetch("https://your-cloud-run-url/saveScore", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ score: score, timestamp: Date.now(), mode: learningMode })
-            }).catch(() => {});
+            console.assert(normalizedScore >= 0 && normalizedScore <= 100, "Invalid score range");
+            try {
+                await EngineUtils.safeJsonPost(endpoint, {
+                    score: normalizedScore,
+                    timestamp: Date.now(),
+                    mode: learningMode
+                });
+            } catch (error) {
+                // Keep runtime resilient even if network calls fail.
+            }
         }
 
         const CRISIS_SCENARIOS = [
@@ -648,13 +686,10 @@
                 return;
             }
             const total = stages.length;
-            const filled = Math.round((answeredQuestions / total) * 10);
-            const empty = 10 - filled;
-            const bar = '█'.repeat(filled) + '░'.repeat(empty);
-            const pct = Math.round((answeredQuestions / total) * 100);
+            const progressData = EngineUtils.buildProgressData(answeredQuestions, total);
             const progressEl = document.getElementById('le-progress');
-            progressEl.innerText = `[${bar}] ${pct}%`;
-            progressEl.setAttribute('aria-valuenow', pct);
+            progressEl.innerText = progressData.text;
+            progressEl.setAttribute('aria-valuenow', progressData.percent);
         }
 
         function renderQuestion(stateData, isCrisis = false) {
@@ -786,7 +821,7 @@
                 }
             });
             
-            const pct = Math.round((scoreCount / total) * 100);
+            const pct = EngineUtils.clampScore((scoreCount / total) * 100);
             
             document.getElementById('le-question').innerText = `Election Literacy Score: ${pct}%`;
             

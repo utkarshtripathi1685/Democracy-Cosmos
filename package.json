@@ -1,0 +1,10 @@
+{
+  "name": "antigravity-election-universe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive civic education simulator",
+  "scripts": {
+    "test": "node --test engine-utils.test.js",
+    "start": "npx serve ."
+  }
+}
