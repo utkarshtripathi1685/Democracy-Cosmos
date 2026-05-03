@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Election Universe</title>
+    <style>
+        :root {
+            --space-bg: #030014;
+            --nebula-1: radial-gradient(circle at 20% 30%, rgba(76, 29, 149, 0.4) 0%, transparent 40%);
+            --nebula-2: radial-gradient(circle at 80% 70%, rgba(30, 58, 138, 0.4) 0%, transparent 40%);
+            --sunset-gold: #f59e0b;
+            --text-glow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+            --orb-glow: 0 0 25px currentColor;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--space-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: white;
+            user-select: none;
+            perspective: 1000px;
+        }
+
+        /* Shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate3d(-10px, 5px, 0); }
+            20%, 40%, 60%, 80% { transform: translate3d(10px, -5px, 0); }
+        }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
+        /* AI Assistant Overlay */
+        #ai-assistant {
+            position: absolute;
+            top: 30px; right: 40px;
+            width: 320px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-left: 4px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            z-index: 20;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #a7f3d0;
+            pointer-events: auto;
+        }
+
+        /* Learning Engine UI */
+        #le-content { display: none; margin-top: 15px; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .le-title { color: #10b981; font-size: 16px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .le-explanation { color: #cbd5e1; margin-bottom: 15px; font-size: 12px; }
+        .le-question { color: #f8fafc; font-size: 14px; margin-bottom: 10px; font-weight: 600; }
+        .le-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .le-option { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); color: #e2e8f0; padding: 8px 12px; border-radius: 4px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: 'Inter', sans-serif; font-size: 12px; }
+        .le-option:hover { background: rgba(255, 255, 255, 0.1); border-color: #10b981; }
+        .le-option.correct { background: rgba(16, 185, 129, 0.2); border-color: #10b981; }
+        .le-option.wrong { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
+        .le-feedback { font-size: 12px; margin-bottom: 10px; padding: 8px; border-radius: 4px; display: none; }
+        .le-feedback.correct-text { background: rgba(16, 185, 129, 0.1); color: #34d399; border-left: 2px solid #10b981; }
+        .le-feedback.wrong-text { background: rgba(239, 68, 68, 0.1); color: #f87171; border-left: 2px solid #ef4444; }
+        .le-progress { font-family: monospace; color: #64748b; margin-top: 10px; font-size: 11px; text-align: right; }
+        .le-btn-next { background: #10b981; color: #020617; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none; float: right; font-size: 11px; }
+        .le-btn-next:hover { background: #34d399; }
+        .clearfix::after { content: ""; clear: both; display: table; }
+
+        #judge-overlay {
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8);
+            color: #0f0; font-family: monospace; font-size: 12px; padding: 10px;
+            border: 1px solid #0f0; z-index: 100; display: none; pointer-events: none;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px; height: 15px;
+            background: #10b981;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Nebula layers */
+        .nebula {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .nebula-1 { background: var(--nebula-1); }
+        .nebula-2 { background: var(--nebula-2); }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* UI Overlay */
+        #ui {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 15px 30px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 12px;
+            box-shadow: 0 0 10px rgba(255,255,255,0);
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: white;
+            box-shadow: 0 0 15px rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .slider-container label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 150px;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        /* DOM Layer for interactive super-imposed elements */
+        #dom-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            perspective: 1000px;
+        }
+
+        /* Fragments */
+        .fragment {
+            position: absolute;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: white;
+            pointer-events: auto;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transform-origin: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: opacity 0.4s ease, transform 0.4s ease, filter 0.3s;
+            max-width: 200px;
+            line-height: 1.4;
+        }
+        .fragment:hover {
+            filter: brightness(1.3);
+            z-index: 100;
+        }
+
+        /* Candidate Cards */
+        .candidate-card {
+            position: absolute;
+            width: 240px;
+            height: 340px;
+            background: linear-gradient(145deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 20px;
+            color: white;
+            pointer-events: auto;
+            transform-style: preserve-3d;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* Animation set by JS inline styles */
+        }
+        
+        .candidate-card .avatar {
+            width: 80px; height: 80px;
+            background: linear-gradient(45deg, #f59e0b, #ec4899);
+            border-radius: 50%;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        .candidate-card h3 {
+            margin: 0; text-align: center;
+            font-size: 20px; text-shadow: var(--text-glow);
+        }
+        .candidate-card .role {
+            text-align: center; color: #94a3b8; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .candidate-card .stat {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px; padding: 10px; font-size: 13px;
+        }
+
+        /* Title */
+        h1 {
+            position: absolute;
+            top: 30px; left: 40px;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: var(--text-glow);
+            z-index: 10;
+            pointer-events: none;
+            background: linear-gradient(90deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            position: absolute;
+            top: 70px; left: 40px;
+            color: #94a3b8;
+            font-size: 14px;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+    
+    <h1>Democracy Cosmos</h1>
+    <div class="subtitle">Observation Deck - Sector 4</div>
+
+    <div id="judge-overlay">
+        <div>FPS: <span id="j-fps">0</span></div>
+        <div>Particles/Frags: <span id="j-particles">0</span></div>
+        <div>Audio Nodes: <span id="j-audio">0</span></div>
+        <div>State: <span id="j-state">IDLE</span></div>
+    </div>
+
+    <canvas id="universe"></canvas>
+
+    <div id="dom-layer"></div>
+
+    <div id="ai-assistant">
+        <span id="ai-text"></span><span class="cursor" id="ai-cursor"></span>
+        <div id="le-content" class="clearfix">
+            <div class="le-title" id="le-title"></div>
+            <div class="le-explanation" id="le-explanation"></div>
+            <div class="le-question" id="le-question"></div>
+            <div class="le-options" id="le-options"></div>
+            <div class="le-feedback" id="le-feedback"></div>
+            <button class="le-btn-next" id="le-next">Next</button>
+            <div style="clear:both"></div>
+            <div class="le-progress" id="le-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+        </div>
+    </div>
+
+    <div id="aria-live" aria-live="polite" style="position:absolute; left:-9999px;"></div>
+
+    <div id="ui">
+        <button id="btn-vote" aria-label="Cast a Vote">Cast a Vote</button>
+        <div class="slider-container">
+            <label>Gravity Pull</label>
+            <input type="range" id="gravity-slider" min="0" max="1" step="0.01" value="0" aria-label="Adjust Timeline">
+        </div>
+        <button id="btn-flare" aria-label="Start Election Day Simulation">⚠ Election Day Simulation Mode</button>
+        <button id="btn-summon" aria-label="Start Election Crisis Simulation">⚠ Run Election Crisis Simulation</button>
+    </div>
+
+    <script>
+        // ========================
+        // SECTION: CORE SETUP & STATE
+        // ========================
+        const canvas = document.getElementById('universe');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize
+        const domLayer = document.getElementById('dom-layer');
+        let width, height;
+        let cx, cy; // Center
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            cx = width / 2;
+            cy = height / 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- Global State ---
+        let gravityPull = 0; // 0 = zero-g (orbits), 1 = full gravity (timeline)
+        const mouse = { x: -1000, y: -1000, vx: 0, vy: 0 };
+        const pastMouse = { x: -1000, y: -1000 };
+
+        let judgeModeActive = false;
+        let activeAudioNodes = 0;
+        let judgeState = "INITIALIZING";
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'j') {
+                judgeModeActive = !judgeModeActive;
+                document.getElementById('judge-overlay').style.display = judgeModeActive ? 'block' : 'none';
+            }
+        });
+
+        document.getElementById('gravity-slider').addEventListener('input', (e) => {
+            gravityPull = parseFloat(e.target.value);
+            updateHum(gravityPull);
+            if (gravityPull >= 1.0 && typeof learningMode !== 'undefined' && learningMode === 'standard') {
+                document.getElementById('btn-flare').click();
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            pastMouse.x = mouse.x;
+            pastMouse.y = mouse.y;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.vx = mouse.x - pastMouse.x;
+            mouse.vy = mouse.y - pastMouse.y;
+            
+            // Enhancement 2: 3D Mouse Parallax
+            const px = (mouse.x / width - 0.5) * 20;
+            const py = (mouse.y / height - 0.5) * 20;
+            document.querySelector('.nebula-1').style.transform = `translate(${px * -2}px, ${py * -2}px)`;
+            document.querySelector('.nebula-2').style.transform = `translate(${px * -4}px, ${py * -4}px)`;
+            canvas.style.transform = `translate(${px * 1.5}px, ${py * 1.5}px) scale(1.02)`;
+
+            // Spawn Confetti
+            if (Math.random() < 0.3 + (Math.abs(mouse.vx) + Math.abs(mouse.vy))/100) {
+                spawnConfetti(mouse.x, mouse.y, mouse.vx, mouse.vy);
+            }
+        });
+
+        // ========================
+        // SECTION: AUDIO ENGINE
+        // ========================
+        let audioCtx;
+        let masterGain;
+        let humOsc;
+
+        function initAudio() {
+            // Reusing audio nodes to reduce GC pressure
+            if (audioCtx) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.3;
+            masterGain.connect(audioCtx.destination);
+            
+            // Start the background hum
+            humOsc = audioCtx.createOscillator();
+            humOsc.type = 'sine';
+            humOsc.frequency.value = 55;
+            const humGain = audioCtx.createGain();
+            humGain.gain.value = 0.1;
+            humOsc.connect(humGain);
+            humGain.connect(masterGain);
+            humOsc.start();
+        }
+
+        window.addEventListener('click', initAudio, { once: true });
+        window.addEventListener('input', initAudio, { once: true });
+
+        function updateHum(gravity) {
+            if (humOsc && audioCtx) {
+                humOsc.frequency.setTargetAtTime(55 + gravity * 55, audioCtx.currentTime, 0.1);
+            }
+        }
+
+        function playChime(freqMultiplier = 1) {
+            if (!audioCtx) return;
+            activeAudioNodes++;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880 * freqMultiplier, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440 * freqMultiplier, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.5);
+            setTimeout(() => activeAudioNodes--, 1500);
+        }
+
+        function playBassDrop() {
+            if (!audioCtx) return;
+            activeAudioNodes++;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 1.0);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2.0);
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1.0);
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 2.0);
+            setTimeout(() => activeAudioNodes--, 2000);
+        }
+
+        function playTypeSound() {
+            if (!audioCtx) return;
+            activeAudioNodes++;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1500 + Math.random()*500, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+            setTimeout(() => activeAudioNodes--, 50);
+        }
+
+        // ========================
+        // SECTION: PHYSICS ENGINE
+        // ========================
+        class Spring {
+            constructor(val, tension = 0.05, friction = 0.8) {
+                this.val = val;
+                this.target = val;
+                this.vel = 0;
+                this.tension = tension;
+                this.friction = friction;
+            }
+            update() {
+                const d = this.target - this.val;
+                this.vel += d * this.tension;
+                this.vel *= this.friction;
+                this.val += this.vel;
+                return this.val;
+            }
+        }
+
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        // --- Entities ---
+        
+        // 1. Democracy Sun
+        const sun = {
+            radius: 40,
+            pulse: 0,
+            sunBlast: 1.0
+        };
+
+        // 2. Election Orbs
+        const ELECTION_STATES = [
+            {
+                id: 'registration',
+                label: 'Registration',
+                color: '#10b981',
+                info: ['Voter ID Check', 'Age Validation', 'Address Update'],
+                title: 'Phase 1: Voter Registration',
+                explanation: 'Ensures only eligible citizens can vote. Rolls are updated to add new voters and remove deceased ones.',
+                question: 'What is the minimum age to be eligible to vote in India?',
+                options: ['16 years', '18 years', '21 years'],
+                correctIndex: 1,
+                feedbackCorrect: 'Correct! The voting age was lowered from 21 to 18 by the 61st Amendment in 1988.',
+                feedbackWrong: 'Incorrect. The correct age is 18 years, established by the 61st Amendment.'
+            },
+            {
+                id: 'nomination',
+                label: 'Nomination',
+                color: '#8b5cf6',
+                info: ['Filing Papers', 'Scrutiny', 'Withdrawal'],
+                title: 'Phase 2: Candidate Nomination',
+                explanation: 'Candidates file their affidavits detailing criminal records, assets, and liabilities.',
+                question: 'Who scrutinizes the nomination papers of the candidates?',
+                options: ['Chief Minister', 'Returning Officer (RO)', 'Chief Election Commissioner'],
+                correctIndex: 1,
+                feedbackCorrect: 'Correct! The Returning Officer checks for valid signatures, deposits, and required affidavits.',
+                feedbackWrong: 'Incorrect. The Returning Officer (RO) of the constituency is responsible for scrutiny.'
+            },
+            {
+                id: 'campaigning',
+                label: 'Campaigning',
+                color: '#3b82f6',
+                info: ['Rallies', 'Manifestos', 'Model Code of Conduct'],
+                title: 'Phase 3: Election Campaigning',
+                explanation: 'Candidates appeal to voters. The Model Code of Conduct (MCC) ensures a level playing field.',
+                question: 'When must all public campaigning stop before the polling day?',
+                options: ['24 hours before', '48 hours before', '12 hours before'],
+                correctIndex: 1,
+                feedbackCorrect: 'Correct! The 48-hour "silence period" allows voters to reflect without interference.',
+                feedbackWrong: 'Incorrect. Campaigning must stop 48 hours before the end of polling (silence period).'
+            },
+            {
+                id: 'voting',
+                label: 'Voting',
+                color: '#ef4444',
+                info: ['EVMs', 'VVPAT', 'Polling Agents'],
+                title: 'Phase 4: Polling Day',
+                explanation: 'Voters cast their ballots secretly using Electronic Voting Machines (EVMs).',
+                question: 'What is the purpose of the VVPAT machine?',
+                options: ['To count votes instantly', 'To provide a paper trail of the vote', 'To verify voter identity'],
+                correctIndex: 1,
+                feedbackCorrect: 'Correct! Voter Verifiable Paper Audit Trail ensures the vote was cast as intended.',
+                feedbackWrong: 'Incorrect. VVPAT provides a printed slip to verify the vote was cast correctly.'
+            },
+            {
+                id: 'counting',
+                label: 'Counting',
+                color: '#f59e0b',
+                info: ['Strong Rooms', 'Counting Agents', 'Trends'],
+                title: 'Phase 5: Vote Counting',
+                explanation: 'EVMs are opened in the presence of candidate agents to ensure transparency.',
+                question: 'Who announces the final result for a constituency?',
+                options: ['The Returning Officer (RO)', 'The President of India', 'The Supreme Court'],
+                correctIndex: 0,
+                feedbackCorrect: 'Correct! The RO declares the result and issues the certificate of election.',
+                feedbackWrong: 'Incorrect. The Returning Officer officially declares the winner for their constituency.'
+            }
+        ];
+        
+        const stages = ELECTION_STATES;
+
+        // ========================
+        // SECTION: STATE MACHINE
+        // ========================
+        
+        // TEST: Ensure election states exist
+        console.assert(ELECTION_STATES && ELECTION_STATES.length > 0, "States not initialized");
+
+        let engineScore = 0;
+        let answeredQuestions = 0;
+        let learningMode = 'standard'; // 'standard', 'simulation', 'crisis'
+        const userAnswers = {};
+        let crisisQueue = [];
+
+        function reportScore(score) {
+            // TEST: Score bounds check
+            console.assert(score >= 0 && score <= 100, "Invalid score range");
+            fetch("https://your-cloud-run-url/saveScore", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ score: score, timestamp: Date.now(), mode: learningMode })
+            }).catch(() => {});
+        }
+
+        const CRISIS_SCENARIOS = [
+            {
+                id: 'crisis_1', title: 'Crisis Alert: Fake News',
+                explanation: 'A viral video falsely claims polling booths in Ward 4 are closed due to violence.',
+                question: 'As the Election Commission, what is the immediate action?',
+                options: ['Cancel the election in Ward 4', 'Issue swift factual clarification via official channels', 'Arrest all journalists in the area'],
+                correctIndex: 1,
+                feedbackCorrect: 'Correct! Rapid communication and working with fact-checkers is the standard EC protocol.',
+                feedbackWrong: 'Incorrect. The EC focuses on countering misinformation rapidly with truth, not arbitrary cancellation or arrests.'
+            },
+            {
+                id: 'crisis_2', title: 'Crisis Alert: MCC Violation',
+                explanation: 'A ruling party candidate is caught distributing cash to voters the night before polling.',
+                question: 'Under the Model Code of Conduct, what is the consequence?',
+                options: ['A warning letter', 'Immediate FIR and potential disqualification', 'A fine of ₹1000'],
+                correctIndex: 1,
+                feedbackCorrect: 'Correct! Bribery is a corrupt practice and electoral offense leading to FIR and strict action.',
+                feedbackWrong: 'Incorrect. Cash distribution is a severe electoral offense requiring an FIR and potential disqualification.'
+            }
+        ];
+
+        function updateProgressBar() {
+            if (learningMode === 'crisis') {
+                document.getElementById('le-progress').innerText = `[ CRISIS MODE ]`;
+                return;
+            }
+            const total = stages.length;
+            const filled = Math.round((answeredQuestions / total) * 10);
+            const empty = 10 - filled;
+            const bar = '█'.repeat(filled) + '░'.repeat(empty);
+            const pct = Math.round((answeredQuestions / total) * 100);
+            const progressEl = document.getElementById('le-progress');
+            progressEl.innerText = `[${bar}] ${pct}%`;
+            progressEl.setAttribute('aria-valuenow', pct);
+        }
+
+        function renderQuestion(stateData, isCrisis = false) {
+            // TEST: Prevent invalid state transitions
+            console.assert(stateData && stateData.id, "Invalid state index");
+
+            document.getElementById('aria-live').textContent = "Entering Phase: " + stateData.title;
+
+            document.getElementById('ai-text').style.display = 'none';
+            document.getElementById('ai-cursor').style.display = 'none';
+            document.getElementById('le-content').style.display = 'block';
+            
+            document.getElementById('le-title').innerText = stateData.title;
+            document.getElementById('le-explanation').innerText = stateData.explanation;
+            document.getElementById('le-question').innerText = stateData.question;
+            
+            const optionsContainer = document.getElementById('le-options');
+            optionsContainer.innerHTML = '';
+            
+            const feedbackEl = document.getElementById('le-feedback');
+            feedbackEl.style.display = 'none';
+            feedbackEl.className = 'le-feedback';
+            
+            const nextBtn = document.getElementById('le-next');
+            nextBtn.style.display = 'none';
+            
+            playTypeSound();
+            judgeState = isCrisis ? `CRISIS: ${stateData.id}` : `Q: ${stateData.id}`;
+            
+            stateData.options.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'le-option';
+                btn.innerText = optText;
+                btn.onclick = () => handleAnswer(index, stateData, isCrisis);
+                optionsContainer.appendChild(btn);
+            });
+            
+            updateProgressBar();
+        }
+
+        function handleAnswer(selectedIndex, stateData, isCrisis) {
+            const buttons = document.querySelectorAll('.le-option');
+            buttons.forEach(b => b.onclick = null);
+            
+            const isCorrect = selectedIndex === stateData.correctIndex;
+            if (isCorrect) engineScore++;
+            
+            userAnswers[stateData.id] = isCorrect;
+            if (!isCrisis) {
+                if (!stages.find(s => s.id === stateData.id).answered) {
+                    stages.find(s => s.id === stateData.id).answered = true;
+                    answeredQuestions++;
+                }
+            }
+            
+            buttons[stateData.correctIndex].classList.add('correct');
+            if (!isCorrect) {
+                buttons[selectedIndex].classList.add('wrong');
+                playBassDrop();
+            } else {
+                playChime(1.5);
+            }
+            
+            const feedbackEl = document.getElementById('le-feedback');
+            feedbackEl.style.display = 'block';
+            feedbackEl.innerText = isCorrect ? stateData.feedbackCorrect : stateData.feedbackWrong;
+            feedbackEl.className = 'le-feedback ' + (isCorrect ? 'correct-text' : 'wrong-text');
+            
+            const nextBtn = document.getElementById('le-next');
+            nextBtn.style.display = 'block';
+            nextBtn.onclick = () => handleNext(isCrisis);
+            
+            updateProgressBar();
+        }
+
+        function handleNext(isCrisis) {
+            if (isCrisis) {
+                if (crisisQueue.length > 0) {
+                    renderQuestion(crisisQueue.shift(), true);
+                } else {
+                    showResults(true);
+                }
+            } else {
+                if (learningMode === 'simulation') {
+                    const nextIndex = stages.findIndex(s => !s.answered);
+                    if (nextIndex !== -1) {
+                        if (typeof flashScreen === 'function') flashScreen();
+                        renderQuestion(stages[nextIndex], false);
+                    } else {
+                        showResults(false);
+                    }
+                } else {
+                    showIdle();
+                    if (answeredQuestions === stages.length) {
+                        setTimeout(() => showResults(false), 1000);
+                    }
+                }
+            }
+        }
+
+        function showIdle() {
+            document.getElementById('le-content').style.display = 'none';
+            document.getElementById('ai-text').style.display = 'inline';
+            document.getElementById('ai-cursor').style.display = 'inline-block';
+            document.getElementById('ai-text').innerHTML = "Awaiting your command, Judge...<br><br>";
+            judgeState = "IDLE";
+        }
+
+        function showResults(fromCrisis) {
+            document.getElementById('ai-text').style.display = 'none';
+            document.getElementById('ai-cursor').style.display = 'none';
+            document.getElementById('le-content').style.display = 'block';
+            
+            document.getElementById('le-title').innerText = fromCrisis ? 'Crisis Simulation Complete' : 'Election Cycle Complete';
+            document.getElementById('le-explanation').innerText = '';
+            
+            let total = fromCrisis ? CRISIS_SCENARIOS.length : stages.length;
+            let scoreCount = 0;
+            let subset = fromCrisis ? CRISIS_SCENARIOS : stages;
+            let strong = [];
+            let weak = [];
+            
+            subset.forEach(s => {
+                if (userAnswers[s.id]) {
+                    scoreCount++;
+                    strong.push(s.label || s.id);
+                } else if (userAnswers[s.id] === false) {
+                    weak.push(s.label || s.id);
+                }
+            });
+            
+            const pct = Math.round((scoreCount / total) * 100);
+            
+            document.getElementById('le-question').innerText = `Election Literacy Score: ${pct}%`;
+            
+            const optionsContainer = document.getElementById('le-options');
+            let recommendation = weak.length > 0 ? `Review the ${weak[0]} Phase again.` : "Excellent work, Judge. You are ready.";
+            optionsContainer.innerHTML = `
+                <div style="font-size:13px; color:#cbd5e1; margin-bottom:10px; line-height:1.6;">
+                    <div style="color:#10b981; margin-bottom:5px;">✔ <strong>Strengths:</strong><br>- ${strong.length > 0 ? strong.join('<br>- ') : 'None'}</div>
+                    <div style="color:#ef4444; margin-bottom:10px;">✖ <strong>Weak Areas:</strong><br>- ${weak.length > 0 ? weak.join('<br>- ') : 'None'}</div>
+                    <div style="color:#f8fafc; margin-top:10px;"><strong>Recommendation:</strong><br>${recommendation}</div>
+                </div>
+            `;
+            
+            document.getElementById('le-feedback').style.display = 'none';
+            
+            const nextBtn = document.getElementById('le-next');
+            nextBtn.innerText = "Restart Engine";
+            nextBtn.style.display = 'block';
+            nextBtn.onclick = () => location.reload();
+            
+            judgeState = "RESULTS";
+            playChime(2.0);
+            document.getElementById('aria-live').textContent = `Simulation complete. Score: ${pct}%`;
+            
+            reportScore(pct);
+        }
+
+        class Orb {
+            constructor(data, index, total) {
+                this.data = data;
+                this.index = index;
+                this.total = total;
+                this.radius = 25;
+                
+                // Orbit parameters
+                this.orbitRadius = 150 + index * 40;
+                this.baseAngle = (index / total) * Math.PI * 2;
+                this.orbitSpeed = 0.0002 * (4 - index * 0.5); // inner faster
+                this.angle = this.baseAngle;
+
+                // Position (Spring for smoothing transitions)
+                this.x = new Spring(cx);
+                this.y = new Spring(cy);
+                this.x.friction = 0.85;
+                this.y.friction = 0.85;
+                
+                this.history = []; // For comet trails
+
+                // Interaction
+                this.hovered = false;
+                this.scale = new Spring(1);
+            }
+
+            update(time) {
+                this.angle += this.orbitSpeed * (1 - gravityPull); // slow down orbit as gravity increases
+
+                // Orbit Target
+                const currentOrbitRadius = this.orbitRadius * (1 + 0.1 * Math.sin(time * 0.002 + this.index));
+                const orbitX = cx + Math.cos(this.angle) * currentOrbitRadius;
+                const orbitY = cy + Math.sin(this.angle) * currentOrbitRadius;
+
+                // Timeline Target (Bottom central line)
+                const spacing = Math.min(180, width / (this.total + 1));
+                const startX = cx - ((this.total - 1) / 2) * spacing;
+                const timelineX = startX + this.index * spacing;
+                const timelineY = cy + 150; // Below center
+
+                // Interpolate target based on gravity
+                this.x.target = lerp(orbitX, timelineX, gravityPull);
+                this.y.target = lerp(orbitY, timelineY, gravityPull);
+
+                // Mouse interaction
+                const dx = mouse.x - this.x.val;
+                const dy = mouse.y - this.y.val;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Enhancement 2: Cursor Gravitational Repulsion
+                if (gravityPull < 0.4 && dist < 160) {
+                    const force = ((160 - dist) / 160) * 2.8;
+                    const len = dist > 0.01 ? dist : 0.01;
+                    // Vector FROM cursor TO orb center is -dx, -dy
+                    const nx = -dx / len;
+                    const ny = -dy / len;
+                    this.x.vel += nx * force;
+                    this.y.vel += ny * force;
+                }
+                
+                this.hovered = dist < this.radius + 15;
+                this.scale.target = this.hovered ? 1.3 : 1;
+
+                this.x.update();
+                this.y.update();
+                this.scale.update();
+                
+                // Enhancement 1: History for Comet Trails
+                // Using capped arrays to prevent memory leaks
+                if (gravityPull >= 0.85) {
+                    this.history = [];
+                } else {
+                    this.history.push({x: this.x.val, y: this.y.val});
+                    if (this.history.length > 28) {
+                        this.history.shift();
+                    }
+                }
+            }
+
+            draw(ctx) {
+                const drawX = this.x.val;
+                const drawY = this.y.val;
+                const r = this.radius * this.scale.val;
+
+                // Enhancement 1: Comet Trails
+                if (gravityPull < 0.85 && this.history.length > 1) {
+                    for (let i = 0; i < this.history.length - 1; i++) {
+                        const pt1 = this.history[i];
+                        const pt2 = this.history[i+1];
+                        const progress = i / (this.history.length - 1);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(pt1.x, pt1.y);
+                        ctx.lineTo(pt2.x, pt2.y);
+                        
+                        ctx.lineWidth = progress * (r * 0.6);
+                        ctx.strokeStyle = this.data.color;
+                        ctx.globalAlpha = progress * 0.55;
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1.0;
+                }
+
+                // Connection to Sun
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(drawX, drawY);
+                ctx.strokeStyle = `rgba(255,255,255, ${0.05 + 0.1 * (1 - gravityPull)})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Timeline baseline
+                if (gravityPull > 0) {
+                     ctx.beginPath();
+                     ctx.moveTo(drawX, drawY);
+                     ctx.lineTo(drawX, cy + 150);
+                     ctx.strokeStyle = `${this.data.color}${Math.floor(gravityPull*80).toString(16).padStart(2,'0')}`;
+                     ctx.lineWidth = 2;
+                     ctx.stroke();
+                }
+
+                // Orb Glow
+                const grad = ctx.createRadialGradient(drawX, drawY, r*0.2, drawX, drawY, r*2);
+                grad.addColorStop(0, this.data.color);
+                grad.addColorStop(1, 'transparent');
+                
+                ctx.beginPath();
+                ctx.arc(drawX, drawY, r*2, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // Orb Core
+                ctx.beginPath();
+                ctx.arc(drawX, drawY, r*0.6, 0, Math.PI * 2);
+                ctx.fillStyle = this.hovered ? '#fff' : this.data.color;
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = `rgba(255,255,255, ${0.6 + gravityPull*0.4})`;
+                ctx.font = '600 12px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(this.data.label.toUpperCase(), drawX, drawY + r + 15);
+            }
+
+            explode() {
+                // Remove existing fragments for this orb
+                document.querySelectorAll(`.frag-${this.index}`).forEach(el => el.remove());
+
+                this.data.info.forEach((text, i) => {
+                    const el = document.createElement('div');
+                    el.className = `fragment frag-${this.index}`;
+                    el.style.borderColor = this.data.color;
+                    el.innerText = text;
+                    domLayer.appendChild(el);
+
+                    // Random explosion trajectory
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 60 + Math.random() * 80;
+                    
+                    // State variables for animation loop
+                    const fragData = {
+                        el,
+                        x: this.x.val,
+                        y: this.y.val,
+                        vx: Math.cos(angle) * (3 + Math.random()*4),
+                        vy: Math.sin(angle) * (3 + Math.random()*4),
+                        life: 1,
+                        color: this.data.color
+                    };
+                    
+                    // Trigger reflow and show
+                    setTimeout(() => {
+                        el.style.opacity = '1';
+                        el.style.transform = `translate(-50%, -50%) rotate(${(Math.random()-0.5)*20}deg)`;
+                        el.style.left = `${fragData.x}px`;
+                        el.style.top = `${fragData.y}px`;
+                    }, 10);
+                    
+                    fragments.push(fragData);
+                });
+            }
+        }
+
+        const orbs = stages.map((s, i) => new Orb(s, i, stages.length));
+        const fragments = []; // {el, x, y, vx, vy, life}
+
+        canvas.addEventListener('click', () => {
+            orbs.forEach(orb => {
+                if (orb.hovered) {
+                    orb.explode();
+                    // Slight feedback on orb
+                    orb.scale.val = 2;
+                    // Play synthesized chime
+                    playChime(1.0 + orb.index * 0.1);
+                    
+                    if (learningMode === 'standard') {
+                        renderQuestion(orb.data, false);
+                    }
+                }
+            });
+        });
+
+        // 3. Particles (Confetti & Ballots)
+        const particles = [];
+        
+        function spawnConfetti(x, y, vx, vy) {
+            const colors = ['#f87171', '#60a5fa', '#34d399', '#fbbf24', '#ffffff'];
+            particles.push({
+                type: 'confetti',
+                x, y,
+                vx: vx * 0.1 + (Math.random() - 0.5) * 5,
+                vy: vy * 0.1 + (Math.random() - 0.5) * 5,
+                life: 1,
+                decay: 0.01 + Math.random() * 0.02,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 4 + 1
+            });
+        }
+
+        function spawnLanterns() {
+            for(let i=0; i<15; i++) {
+                // Spawn randomly at bottom
+                particles.push({
+                    type: 'lantern',
+                    x: Math.random() * width,
+                    y: height + 50 + Math.random() * 100,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: -2 - Math.random() * 3,
+                    life: 1,
+                    decay: 0.002,
+                    color: '#fef08a',
+                    size: 8 + Math.random()*6,
+                    wobbleObj: Math.random() * Math.PI * 2,
+                    wobbleSpeed: 0.02 + Math.random() * 0.03
+                });
+            }
+        }
+
+        document.getElementById('btn-vote').addEventListener('click', () => {
+            spawnLanterns();
+        });
+
+        // Enhancement 3: Solar Flare Burst Button
+        let shockwaves = [];
+        let flashAlpha = 0;
+        
+        function flashScreen() {
+            flashAlpha = 1.0;
+        }
+
+        document.getElementById('btn-flare').addEventListener('click', () => {
+            flashScreen();
+            playBassDrop();
+            
+            // Screen Shake (Enhancement 4)
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+            
+            shockwaves.push({
+                radius: 0,
+                alpha: 0.7,
+                life: 55,
+                maxLife: 55
+            });
+
+            orbs.forEach(orb => {
+                const dx = orb.x.val - cx;
+                const dy = orb.y.val - cy;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 0.01;
+                const nx = dx / dist;
+                const ny = dy / dist;
+                orb.x.vel += nx * 22;
+                orb.y.vel += ny * 22;
+            });
+
+            const colors = ['#10b981', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#ffffff'];
+            for(let i=0; i<40; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 6 + Math.random() * 8;
+                particles.push({
+                    type: 'confetti',
+                    x: cx, y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1,
+                    decay: 0.01 + Math.random() * 0.02,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 4 + 1
+                });
+            }
+
+            sun.sunBlast = 2.8;
+            
+            learningMode = 'simulation';
+            const nextIndex = stages.findIndex(s => !s.answered);
+            if (nextIndex !== -1) {
+                renderQuestion(stages[nextIndex], false);
+            } else {
+                showResults(false);
+            }
+        });
+
+        // 4. Candidates & Scenario Mode
+        document.getElementById('btn-summon').addEventListener('click', () => {
+            summonCandidates();
+            
+            if (learningMode !== 'crisis') {
+                learningMode = 'crisis';
+                crisisQueue = [...CRISIS_SCENARIOS];
+                renderQuestion(crisisQueue.shift(), true);
+            } else if (!candidatesSummoned) {
+                showIdle();
+                learningMode = 'standard';
+            }
+        });
+
+        let candidatesSummoned = false;
+        function summonCandidates() {
+            if (candidatesSummoned) {
+                // Toggle off
+                document.querySelectorAll('.candidate-card').forEach(el => {
+                    el.style.transform = `translate(-50%, -50%) translate3d(${Math.random() > 0.5 ? 2000 : -2000}px, 0, 0) rotate(45deg)`;
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 1000);
+                });
+                candidatesSummoned = false;
+                document.getElementById('btn-summon').innerText = "⚠ Run Election Crisis Simulation";
+                return;
+            }
+
+            candidatesSummoned = true;
+            document.getElementById('btn-summon').innerText = "Dismiss Crisis Simulation";
+            const data = [
+                { name: 'Elena Rostova', role: 'Progressive Coalition', stat: '54% Engagement' },
+                { name: 'Marcus Vance', role: 'Liberty Vanguard', stat: '42% Engagement' }
+            ];
+
+            const startXs = [-400, width + 400];
+            const endXs = [width/2 - 250, width/2 + 250];
+
+            data.forEach((c, i) => {
+                const el = document.createElement('div');
+                el.className = 'candidate-card';
+                el.innerHTML = `
+                    <div class="avatar"></div>
+                    <h3>${c.name}</h3>
+                    <div class="role">${c.role}</div>
+                    <div style="flex-grow:1"></div>
+                    <div class="stat">${c.stat}</div>
+                `;
+                
+                // Initial offscreen state
+                el.style.left = `0px`; 
+                el.style.top = `0px`;
+                el.style.transform = `translate(-50%, -50%) translate3d(${startXs[i]}px, ${cy - 100}px, 0) rotate(${i===0 ? -30 : 30}deg)`;
+                el.style.opacity = '0';
+                el.style.transition = 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s';
+                
+                domLayer.appendChild(el);
+
+                // Trigger entrance
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        el.style.opacity = '1';
+                        el.style.transform = `translate(-50%, -50%) translate3d(${endXs[i]}px, ${cy - 100}px, 0) rotate(0deg)`;
+                    });
+                });
+                
+                // Add floating loop logic via custom properties attached to DOM element
+                el._floatState = { x: endXs[i], y: cy - 100, t: Math.random() * 100 };
+            });
+        }
+
+
+        // --- Main Render Loop ---
+        let lastTime = 0;
+        let frameCount = 0;
+        let lastFpsTime = 0;
+        let currentFps = 0;
+
+        // Decoupled render/update loop for performance stability
+        function loop(time) {
+            requestAnimationFrame(loop);
+            const dt = time - lastTime;
+            lastTime = time;
+
+            if (judgeModeActive) {
+                frameCount++;
+                if (time - lastFpsTime >= 1000) {
+                    currentFps = frameCount;
+                    frameCount = 0;
+                    lastFpsTime = time;
+                    document.getElementById('j-fps').innerText = currentFps;
+                }
+                document.getElementById('j-particles').innerText = particles.length + fragments.length;
+                document.getElementById('j-audio').innerText = activeAudioNodes + (typeof humOsc !== 'undefined' && humOsc ? 1 : 0);
+                document.getElementById('j-state').innerText = judgeState;
+            }
+
+            // Clear Background (simulate motion blur using semi-transparent fill)
+            ctx.fillStyle = `rgba(3, 0, 20, 0.3)`; // var(--space-bg) but slight alpha
+            ctx.fillRect(0, 0, width, height);
+
+            if (flashAlpha > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+                ctx.fillRect(0, 0, width, height);
+                flashAlpha -= 0.05;
+            }
+
+            // Draw Sun
+            sun.pulse = Math.sin(time * 0.002) * 5;
+            if (sun.sunBlast > 1.0) {
+                sun.sunBlast *= 0.88;
+                if (sun.sunBlast < 1.0) sun.sunBlast = 1.0;
+            }
+            const sunR = (sun.radius + sun.pulse) * sun.sunBlast; // Animated sun breathing
+            
+            const sunGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sunR*4);
+            sunGrad.addColorStop(0, '#fff');
+            sunGrad.addColorStop(0.2, '#fef08a');
+            sunGrad.addColorStop(1, 'transparent');
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, sunR*4, 0, Math.PI*2);
+            ctx.fillStyle = sunGrad;
+            ctx.fill();
+
+            // Draw Shockwaves
+            for(let i = shockwaves.length - 1; i >= 0; i--) {
+                const sw = shockwaves[i];
+                sw.life--;
+                const progress = 1 - (sw.life / sw.maxLife);
+                sw.radius = progress * 380;
+                sw.alpha = 0.7 * (1 - progress);
+                
+                ctx.beginPath();
+                ctx.arc(cx, cy, sw.radius, 0, Math.PI*2);
+                ctx.strokeStyle = `rgba(245, 200, 66, ${sw.alpha})`;
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                if (sw.life <= 0) {
+                    shockwaves.splice(i, 1);
+                }
+            }
+
+            // Draw Orbs
+            orbs.forEach(orb => {
+                orb.update(time);
+                orb.draw(ctx);
+            });
+
+            // Draw & Update Particles
+            for(let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+
+                if (p.type === 'confetti') {
+                    p.vy += 0.1 * gravityPull; // Gravity affects confetti slightly
+                    p.vx *= 0.98; // Friction
+                } else if (p.type === 'lantern') {
+                    p.wobbleObj += p.wobbleSpeed;
+                    p.vx = Math.sin(p.wobbleObj) * 0.5;
+                    // Defy gravity pulling down, lanterns always ascend
+                    p.vy -= 0.01; 
+                }
+
+                if(p.life <= 0 || p.y < -50 || p.y > height + 50 || p.x < -50 || p.x > width + 50) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                if (p.type === 'lantern') {
+                    // Lantern shape
+                    ctx.shadowColor = p.color;
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x - p.size/2, p.y - p.size, p.size, p.size * 1.5);
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // Update Fragments (DOM Elements)
+            for(let i = fragments.length - 1; i >= 0; i--) {
+                const f = fragments[i];
+                f.life -= 0.005; // Fade slowly
+                
+                // Drift logic - if zero gravity, they drift out. If gravity, they drift down.
+                if (gravityPull === 0) {
+                   f.vx *= 0.99;
+                   f.vy *= 0.99;
+                } else {
+                   f.vx *= 0.95;
+                   f.vy += 0.2 * gravityPull; // Gravity effect
+                }
+                
+                f.x += f.vx;
+                f.y += f.vy;
+
+                f.el.style.left = `${f.x}px`;
+                f.el.style.top = `${f.y}px`;
+                f.el.style.opacity = f.life;
+                f.el.style.transform = `translate(-50%, -50%) scale(${0.5 + f.life*0.5})`;
+
+                if(f.life <= 0) {
+                    f.el.remove();
+                    fragments.splice(i, 1);
+                }
+            }
+
+            // Continuous float for Candidates
+            document.querySelectorAll('.candidate-card').forEach(el => {
+                if (el._floatState) {
+                    el._floatState.t += 0.01;
+                    const fx = el._floatState.x + Math.sin(el._floatState.t) * 10;
+                    const fy = el._floatState.y + Math.cos(el._floatState.t * 1.3) * 10;
+                    // Do not override transforms if transitioning in/out
+                    if (el.style.opacity === '1') {
+                         el.style.transform = `translate(-50%, -50%) translate3d(${fx}px, ${fy}px, 0) rotate(${Math.sin(el._floatState.t * 0.5)*2}deg)`;
+                    }
+                }
+            });
+        }
+
+        // Start Loop
+        requestAnimationFrame(loop);
+
+        // --- Enhancement 3: "Typewriter" AI Assistant Overlay ---
+        const aiMessages = [
+            "This is a real-time civic education simulator based on the Election Commission of India.",
+            "You are now participating in a simulated election process.",
+            "You will make decisions. I will evaluate them.",
+            "> Click Orbs to trigger phases",
+            "> Or activate Simulation Modes below",
+            "Awaiting your action, Judge..."
+        ];
+        
+        let aiCharIndex = 0;
+        let aiMsgIndex = 0;
+        const aiTextEl = document.getElementById('ai-text');
+        
+        function typeAI() {
+            if (aiMsgIndex >= aiMessages.length) return;
+            const currentMsg = aiMessages[aiMsgIndex];
+            
+            if (aiCharIndex < currentMsg.length) {
+                aiTextEl.innerHTML += currentMsg.charAt(aiCharIndex);
+                if (aiCharIndex % 2 === 0) playTypeSound(); // Sync typing sound
+                aiCharIndex++;
+                setTimeout(typeAI, 25 + Math.random() * 30);
+            } else {
+                aiTextEl.innerHTML += "<br><br>";
+                aiMsgIndex++;
+                aiCharIndex = 0;
+                setTimeout(typeAI, 800);
+            }
+        }
+        
+        // Start typing shortly after load
+        setTimeout(typeAI, 1000);
+
+    </script>
+</body>
+</html>
