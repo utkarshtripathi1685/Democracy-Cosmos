@@ -65,6 +65,24 @@ Add this snippet right before the main script tag in `index.html` and set your C
 
 If the endpoint is not set, score reporting is safely skipped without breaking the simulation.
 
+### Enable Firebase (Google Services) score logging
+
+To activate Firestore logging in addition to Cloud Run, configure Firebase keys in the same runtime config:
+
+```html
+<script>
+  window.__PROMPTWAR_CONFIG__ = {
+    scoreEndpoint: "https://YOUR-CLOUD-RUN-URL/saveScore",
+    firebase: {
+      projectId: "YOUR_FIREBASE_PROJECT_ID",
+      apiKey: "YOUR_FIREBASE_WEB_API_KEY"
+    }
+  };
+</script>
+```
+
+The app writes score snapshots into Firestore collection `election_scores` using the REST API.
+
 ### Run tests
 
 ```bash

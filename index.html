@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'self' https:; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'self' https://*.googleapis.com https://*.run.app https://*.a.run.app https:; object-src 'none'; base-uri 'none'; form-action 'none'">
     <title>Antigravity Election Universe</title>
     <style>
         :root {
@@ -357,10 +357,15 @@
 
     <script>
         window.__PROMPTWAR_CONFIG__ = window.__PROMPTWAR_CONFIG__ || {
-            scoreEndpoint: ""
+            scoreEndpoint: "",
+            firebase: {
+                projectId: "",
+                apiKey: ""
+            }
         };
     </script>
     <script src="./engine-utils.js"></script>
+    <script src="./election-core.js"></script>
     <script>
         // ========================
         // SECTION: CORE SETUP & STATE
@@ -645,11 +650,10 @@
 
         async function reportScore(score) {
             const normalizedScore = EngineUtils.clampScore(score);
-            const endpoint = EngineUtils.getScoreEndpoint();
             // TEST: Score bounds check
             console.assert(normalizedScore >= 0 && normalizedScore <= 100, "Invalid score range");
             try {
-                await EngineUtils.safeJsonPost(endpoint, {
+                await EngineUtils.reportScoreWithGoogleServices({
                     score: normalizedScore,
                     timestamp: Date.now(),
                     mode: learningMode
@@ -734,16 +738,10 @@
             const buttons = document.querySelectorAll('.le-option');
             buttons.forEach(b => b.onclick = null);
             
-            const isCorrect = selectedIndex === stateData.correctIndex;
+            const answerResult = ElectionCore.applyAnswer(stages, userAnswers, stateData, selectedIndex, isCrisis);
+            const isCorrect = answerResult.isCorrect;
             if (isCorrect) engineScore++;
-            
-            userAnswers[stateData.id] = isCorrect;
-            if (!isCrisis) {
-                if (!stages.find(s => s.id === stateData.id).answered) {
-                    stages.find(s => s.id === stateData.id).answered = true;
-                    answeredQuestions++;
-                }
-            }
+            answeredQuestions += answerResult.answeredQuestionsDelta;
             
             buttons[stateData.correctIndex].classList.add('correct');
             if (!isCorrect) {
@@ -774,7 +772,7 @@
                 }
             } else {
                 if (learningMode === 'simulation') {
-                    const nextIndex = stages.findIndex(s => !s.answered);
+                    const nextIndex = ElectionCore.getUnansweredStageIndex(stages);
                     if (nextIndex !== -1) {
                         if (typeof flashScreen === 'function') flashScreen();
                         renderQuestion(stages[nextIndex], false);
@@ -806,31 +804,18 @@
             document.getElementById('le-title').innerText = fromCrisis ? 'Crisis Simulation Complete' : 'Election Cycle Complete';
             document.getElementById('le-explanation').innerText = '';
             
-            let total = fromCrisis ? CRISIS_SCENARIOS.length : stages.length;
-            let scoreCount = 0;
             let subset = fromCrisis ? CRISIS_SCENARIOS : stages;
-            let strong = [];
-            let weak = [];
-            
-            subset.forEach(s => {
-                if (userAnswers[s.id]) {
-                    scoreCount++;
-                    strong.push(s.label || s.id);
-                } else if (userAnswers[s.id] === false) {
-                    weak.push(s.label || s.id);
-                }
-            });
-            
-            const pct = EngineUtils.clampScore((scoreCount / total) * 100);
+            const summary = ElectionCore.summarizeSubsetResults(subset, userAnswers);
+            const pct = EngineUtils.clampScore(summary.percent);
             
             document.getElementById('le-question').innerText = `Election Literacy Score: ${pct}%`;
             
             const optionsContainer = document.getElementById('le-options');
-            let recommendation = weak.length > 0 ? `Review the ${weak[0]} Phase again.` : "Excellent work, Judge. You are ready.";
+            let recommendation = summary.weak.length > 0 ? `Review the ${summary.weak[0]} Phase again.` : "Excellent work, Judge. You are ready.";
             optionsContainer.innerHTML = `
                 <div style="font-size:13px; color:#cbd5e1; margin-bottom:10px; line-height:1.6;">
-                    <div style="color:#10b981; margin-bottom:5px;">✔ <strong>Strengths:</strong><br>- ${strong.length > 0 ? strong.join('<br>- ') : 'None'}</div>
-                    <div style="color:#ef4444; margin-bottom:10px;">✖ <strong>Weak Areas:</strong><br>- ${weak.length > 0 ? weak.join('<br>- ') : 'None'}</div>
+                    <div style="color:#10b981; margin-bottom:5px;">✔ <strong>Strengths:</strong><br>- ${summary.strong.length > 0 ? summary.strong.join('<br>- ') : 'None'}</div>
+                    <div style="color:#ef4444; margin-bottom:10px;">✖ <strong>Weak Areas:</strong><br>- ${summary.weak.length > 0 ? summary.weak.join('<br>- ') : 'None'}</div>
                     <div style="color:#f8fafc; margin-top:10px;"><strong>Recommendation:</strong><br>${recommendation}</div>
                 </div>
             `;
@@ -1144,7 +1129,7 @@
             sun.sunBlast = 2.8;
             
             learningMode = 'simulation';
-            const nextIndex = stages.findIndex(s => !s.answered);
+            const nextIndex = ElectionCore.getUnansweredStageIndex(stages);
             if (nextIndex !== -1) {
                 renderQuestion(stages[nextIndex], false);
             } else {

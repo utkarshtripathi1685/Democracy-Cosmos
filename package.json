@@ -4,7 +4,7 @@
   "private": true,
   "description": "Interactive civic education simulator",
   "scripts": {
-    "test": "node --test engine-utils.test.js",
+    "test": "node --test engine-utils.test.js election-core.test.js",
     "start": "npx serve ."
   }
 }
